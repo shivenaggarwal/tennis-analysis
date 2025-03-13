@@ -1,5 +1,7 @@
 from utils import (read_video,
-                   save_video)
+                   save_video,
+                   measure_distance,
+                   convert_pixel_distance_to_meters)
 
 from trackers import PlayerTracker, BallTracker
 from court_line_detector import CourtLineDetector
@@ -37,11 +39,34 @@ def main():
 
     # Detect ball shots
     ball_shot_frames = ball_tracker.get_ball_shot_frames(ball_detections)
-    print(ball_shot_frames)
+    # print(ball_shot_frames)
 
     # Convert positions to mini court positions
     player_mini_court_detections, ball_mini_court_detections = mini_court.convert_bounding_boxes_to_mini_court_coordinates(
         player_detections, ball_detections, court_keypoints)
+
+    # Shot speed and player speed
+    for ball_shot_ind in range(len(ball_shot_frames)-1):
+        start_frame = ball_shot_frames[ball_shot_ind]
+        end_frame = ball_shot_frames[ball_shot_ind+1]
+        # 24 is the frame rate of the video
+        ball_shot_time_in_seconds = (end_frame-start_frame)/24
+
+        # get distance covered by the ball
+        distance_covered_by_ball_pixels = measure_distance(
+            ball_mini_court_detections[start_frame][1], ball_mini_court_detections[end_frame][1])
+        distance_covered_by_ball_meters = mini_court.convert_pixel_distance_to_meters(
+            distance_covered_by_ball_pixels)
+
+        # speed of the ball shot in km/h
+        speed_of_ball_shot = distance_covered_by_ball_meters/ball_shot_time_in_seconds * 3.6
+
+        # player who shot the ball
+        player_positions = player_mini_court_detections[start_frame]
+        player_shot_ball = min(player_positions.keys(), key=lambda player_id: measure_distance(player_positions[player_id],
+                                                                                               ball_mini_court_detections[start_frame][1]))
+
+        # opponent player speed
 
     # Draw Output
 
