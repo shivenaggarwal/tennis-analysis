@@ -1,3 +1,4 @@
+import numpy as np
 from utils import (convert_meters_to_pixel_distance,
                    convert_pixel_distance_to_meters)
 import constants
@@ -16,8 +17,9 @@ class MiniCourt:
         self.set_canvas_background_box_position(frame)
         self.set_mini_cour_position()
         self.set_court_drawing_key_points()
+        self.set_court_lines()
 
-    def convert_meters_pixels(self, meters):
+    def convert_meters_to_pixels(self, meters):
         return convert_meters_to_pixel_distance(
             meters,
             constants.DOUBLE_LINE_WIDTH,
@@ -83,6 +85,20 @@ class MiniCourt:
 
         self.drawing_key_points = drawing_key_points
 
+    def set_court_lines(self):
+        self.lines = [
+            (0, 2),
+            (4, 5),
+            (6, 7),
+            (1, 3),
+
+            (0, 1),
+            (8, 9),
+            (10, 11),
+            (10, 11),
+            (2, 3)
+        ]
+
     def set_mini_cour_position(self):
         self.court_start_x = self.start_x + self.padding_court
         self.court_start_y = self.start_y + self.padding_court
@@ -96,3 +112,28 @@ class MiniCourt:
         self.end_y = self.buffer + self.drawing_rectangle_height
         self.start_x = self.end_x - self.drawing_rectangle_width
         self.start_y = self.end_y - self.drawing_rectangle_height
+
+    def draw_background_rectangle(self, frame):
+        # dummy image which is all zeros
+        shapes = np.zeros_like(frame, np.uint8)
+        # draw the rectangle on top of this
+        cv2.rectangle(shapes, (self.start_x, self.start_y),
+                      (self.end_x, self.end_y), (255, 255, 255), cv2.FILLED)
+
+        out = frame.copy()
+        alpha = 0.5
+        # this only applies where shapes is not zero
+        mask = shapes.astype(bool)
+        out[mask] = cv2.addWeighted(frame, alpha, shapes, 1-alpha, 0)[mask]
+        out = cv2.cvtColor(out, cv2.COLOR_BGR2RGB)
+
+        return out
+
+    def draw_mini_court(self, frames):
+        output_frames = []
+        for frame in frames:
+            frame = self.draw_background_rectangle(frame)
+
+            output_frames.append(frame)
+
+        return output_frames
