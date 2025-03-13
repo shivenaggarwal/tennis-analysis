@@ -10,7 +10,7 @@ sys.path.append("../")
 class MiniCourt:
     def __init__(self, frame):
         self.drawing_rectangle_width = 250  # white rectangle
-        self.drawing_rectangle_height = 450
+        self.drawing_rectangle_height = 500
         self.buffer = 50  # padding between court and rectangle
         self.padding_court = 20
 
@@ -113,6 +113,32 @@ class MiniCourt:
         self.start_x = self.end_x - self.drawing_rectangle_width
         self.start_y = self.end_y - self.drawing_rectangle_height
 
+    def draw_court(self, frame):
+        for i in range(0, len(self.drawing_key_points), 2):
+            x = int(self.drawing_key_points[i])
+            y = int(self.drawing_key_points[i+1])
+            cv2.circle(frame, (x, y), 5, (0, 0, 255), -1)
+
+        # draw lines
+        for line in self.lines:
+            # 0th postion-> 0 1
+            # 1st postion-> 2 3
+            # 2nd postion-> 4 5
+            start_point = (int(self.drawing_key_points[line[0]*2]), int(
+                self.drawing_key_points[line[0]*2+1]))
+            end_point = (int(self.drawing_key_points[line[1]*2]), int(
+                self.drawing_key_points[line[1]*2+1]))
+            cv2.line(frame, start_point, end_point, (0, 0, 0), 2)
+
+        # draw net line
+        net_start_point = (self.drawing_key_points[0], int(
+            (self.drawing_key_points[1] + self.drawing_key_points[5])/2))
+        net_end_point = (self.drawing_key_points[2], int(
+            (self.drawing_key_points[1] + self.drawing_key_points[5])/2))
+        cv2.line(frame, net_start_point, net_end_point, (255, 0, 0), 2)
+
+        return frame
+
     def draw_background_rectangle(self, frame):
         # dummy image which is all zeros
         shapes = np.zeros_like(frame, np.uint8)
@@ -125,15 +151,25 @@ class MiniCourt:
         # this only applies where shapes is not zero
         mask = shapes.astype(bool)
         out[mask] = cv2.addWeighted(frame, alpha, shapes, 1-alpha, 0)[mask]
-        out = cv2.cvtColor(out, cv2.COLOR_BGR2RGB)
-
         return out
 
     def draw_mini_court(self, frames):
         output_frames = []
         for frame in frames:
             frame = self.draw_background_rectangle(frame)
-
+            frame = self.draw_court(frame)
             output_frames.append(frame)
 
         return output_frames
+
+    def get_start_point_of_mini_court(self):
+        return (self.court_start_x, self.court_start_y)
+
+    def get_start_point_of_mini_court(self):
+        return (self.court_start_x, self.court_start_y)
+
+    def get_width_of_mini_court(self):
+        return self.court_drawing_width
+
+    def get_court_drawing_keypoints(self):
+        return self.drawing_key_points
